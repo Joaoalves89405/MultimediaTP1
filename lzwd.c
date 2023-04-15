@@ -54,6 +54,7 @@ void add_pattern(int *prefix, int len, int suffix)
     dict[dict_size].len = len;
     for (int i = 0; i < len; i++)
     {
+        printf("i: %d, prefix[i]: %d, suffix: %d\n", i, prefix[i], suffix);
         dict[dict_size].prefix[i] = prefix[i];
         dict[dict_size].suffix[i] = suffix;
     }
@@ -79,7 +80,7 @@ void compress(FILE *in_file, FILE *out_file)
         }
         else
         {
-            // printf("prefix[0]: %d, prefix[1]:%d, suffix:%d\n", prefix[0], prefix[1], suffix);
+            printf("prefix[0]: %d, prefix[1]:%d, suffix:%d\n", prefix[0], prefix[1], suffix);
             int code = find_pattern(prefix, prefix_len - 1, suffix);
             fwrite(&code, sizeof(code), 1, out_file);
             if (dict_size >= MAX_DICT_SIZE)
@@ -87,7 +88,10 @@ void compress(FILE *in_file, FILE *out_file)
                 fprintf(stderr, "Error: dictionary overflow\n");
                 exit(1);
             }
-            add_pattern(prefix, prefix_len, suffix);
+            if (prefix[0] != -1 && prefix[1] != 0)
+            {
+                add_pattern(prefix, prefix_len, suffix);
+            }
             prefix[prefix_len++] = suffix;
             prefix_len = 2;
             prefix[0] = -1;
@@ -169,7 +173,7 @@ int main(int argc, char *argv[])
     fclose(in_file);
     fclose(out_file);
     print_dict();
-    printf("Compression rate: %.2f%%\n", (float)compressed_size / orig_size * 100);
+    //   printf("Compression rate: %.2f%%\n", (float)compressed_size / orig_size * 100);
 
     return 0;
 }
