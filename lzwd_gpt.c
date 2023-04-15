@@ -3,11 +3,13 @@
 #include <string.h>
 
 #define MAX_DICT_SIZE 65536
+#define MAX_PATTERN_LEN 1024
 
 typedef struct
 {
-    int prefix;
-    int suffix;
+    int prefix[MAX_PATTERN_LEN];
+    int suffix[MAX_PATTERN_LEN];
+    int len;
 } Pattern;
 
 Pattern dict[MAX_DICT_SIZE];
@@ -18,91 +20,124 @@ void init_dict()
     dict_size = 256;
     for (int i = 0; i < dict_size; i++)
     {
-        dict[i].prefix = -1;
-        dict[i].suffix = i;
+        dict[i].len = 1;
+        dict[i].prefix[0] = -1;
+        dict[i].suffix[0] = i;
     }
 }
 
-int find_pattern(int prefix, char suffix)
+int find_pattern(int *prefix, int len, int suffix)
 {
     for (int i = 0; i < dict_size; i++)
     {
-        if (dict[i].prefix == prefix && dict[i].suffix == suffix)
+        if (dict[i].len == len && dict[i].suffix[len - 1] == suffix)
         {
-            return i;
+            int j;
+            for (j = 0; j < len; j++)
+            {
+                if (dict[i].prefix[j] != prefix[j])
+                {
+                    break;
+                }
+            }
+            if (j == len)
+            {
+                return i;
+            }
         }
     }
     return -1;
 }
 
-void add_pattern(int prefix, char suffix)
+void add_pattern(int *prefix, int len, int suffix)
 {
-    dict[dict_size].prefix = prefix;
-    dict[dict_size].suffix = suffix;
+    dict[dict_size].len = len;
+    for (int i = 0; i < len; i++)
+    {
+        dict[dict_size].prefix[i] = prefix[i];
+        dict[dict_size].suffix[i] = suffix;
+    }
     dict_size++;
 }
 
 void compress(FILE *in_file, FILE *out_file)
 {
     init_dict();
-    int prefix = fgetc(in_file);
-    while (prefix != EOF)
+    int prefix[MAX_PATTERN_LEN] = {-1};
+    int prefix_len = 0;
+    int suffix = fgetc(in_file);
+    while (suffix != EOF)
     {
-        int suffix = fgetc(in_file);
-        if (suffix == EOF)
-        {
-            int code = find_pattern(prefix, -1);
-            fwrite(&code, sizeof(code), 1, out_file);
-            break;
-        }
-        int pattern = find_pattern(prefix, suffix);
+        int new_prefix[MAX_PATTERN_LEN];
+        int new_prefix_len = 0;
+        new_prefix[new_prefix_len++] = prefix[prefix_len - 1];
+        new_prefix[new_prefix_len++] = suffix;
+        int pattern = find_pattern(prefix, prefix_len, suffix);
         if (pattern != -1)
         {
-            prefix = pattern;
+            prefix[prefix_len++] = suffix;
         }
         else
         {
-            int code = find_pattern(prefix, -1);
+            // printf("prefix[0]: %d, prefix[1]:%d, suffix:%d\n", prefix[0], prefix[1], suffix);
+            int code = find_pattern(prefix, prefix_len - 1, suffix);
             fwrite(&code, sizeof(code), 1, out_file);
             if (dict_size >= MAX_DICT_SIZE)
             {
                 fprintf(stderr, "Error: dictionary overflow\n");
                 exit(1);
             }
-            add_pattern(prefix, suffix);
-            prefix = suffix;
+            add_pattern(prefix, prefix_len, suffix);
+            prefix[prefix_len++] = suffix;
+            prefix_len = 2;
+            prefix[0] = -1;
         }
         if (dict_size == 512) // check if dictionary size is 512
         {
             init_dict(); // reset the dictionary
         }
+        prefix[0] = new_prefix[0];
+        prefix[1] = new_prefix[1];
+        prefix_len = 2;
+        suffix = fgetc(in_file);
     }
+    int code = find_pattern(prefix, prefix_len - 1, -1);
+    fwrite(&code, sizeof(code), 1, out_file);
 }
 
 void print_dict()
 {
     char buffer[1024];
+    int buffer_pos = 0;
     for (int i = 256; i < dict_size; i++)
     {
-        int prefix = dict[i].prefix;
-        char suffix = dict[i].suffix;
-        int buffer_pos = 0;
-        buffer[buffer_pos++] = suffix;
-        while (prefix >= 256)
+        buffer_pos = 0;
+        for (int j = 0; j < dict[i].len; j++)
         {
-            buffer[buffer_pos++] = '[';
-            buffer_pos += sprintf(&buffer[buffer_pos], "%d", prefix);
-            buffer[buffer_pos++] = ']';
-            prefix = dict[prefix].prefix;
+            if (dict[i].suffix[j] < 256)
+            {
+                buffer[buffer_pos++] = dict[i].suffix[j];
+            }
+            else
+            {
+                buffer_pos += sprintf(&buffer[buffer_pos], "[%d]", dict[i].suffix[j]);
+            }
         }
-        buffer[buffer_pos++] = prefix;
-        buffer[buffer_pos++] = '[';
-        buffer_pos += sprintf(&buffer[buffer_pos], "%d", prefix);
-        buffer[buffer_pos++] = ']';
+        buffer[buffer_pos++] = ' ';
+        for (int j = 0; j < dict[i].len - 1; j++)
+        {
+            if (dict[i].prefix[j] < 256)
+            {
+                buffer[buffer_pos++] = dict[i].prefix[j];
+            }
+            else
+            {
+                buffer_pos += sprintf(&buffer[buffer_pos], "[%d]", dict[i].prefix[j]);
+            }
+        }
         buffer[buffer_pos++] = '\0';
-        printf("%s ", buffer);
+        printf("%d: %s\n", i, buffer);
     }
-    printf("\n");
 }
 
 int main(int argc, char *argv[])
@@ -125,19 +160,14 @@ int main(int argc, char *argv[])
         return 1;
     }
     compress(in_file, out_file);
-    fclose(in_file);
-    fclose(out_file);
 
     // Calculate compression rate
-    FILE *orig_file = fopen(argv[1], "rb");
-    fseek(orig_file, 0, SEEK_END);
-    long orig_size = ftell(orig_file);
-    fclose(orig_file);
-
-    FILE *compressed_file = fopen(argv[2], "rb");
-    fseek(compressed_file, 0, SEEK_END);
-    long compressed_size = ftell(compressed_file);
-    fclose(compressed_file);
+    fseek(in_file, 0, SEEK_END);
+    long orig_size = ftell(in_file);
+    fseek(out_file, 0, SEEK_END);
+    long compressed_size = ftell(out_file);
+    fclose(in_file);
+    fclose(out_file);
     print_dict();
     printf("Compression rate: %.2f%%\n", (float)compressed_size / orig_size * 100);
 
