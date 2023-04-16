@@ -7,9 +7,9 @@
 
 typedef struct
 {
-    int pattern[MAX_PATTERN_SIZE]; //AABB
-    int length;                    //4
-    int pattern_number;            //P257
+    int pattern[MAX_PATTERN_SIZE]; // AABB
+    int length;                    // 4
+    int pattern_number;            // P257
 } Pattern;
 
 Pattern dict[MAX_DICT_SIZE];
@@ -22,8 +22,7 @@ void init_dict()
     {
         dict[i].pattern[0] = -1;
         dict[i].length = 0;
-        dict[i].pattern_number= i;
-
+        dict[i].pattern_number = i;
     }
 }
 
@@ -48,13 +47,30 @@ void init_dict()
 //     return -1;
 // }
 
+void print_dict()
+{
+    char buffer[1024];
+    for (int i = 255; i < dict_size; i++)
+    {
+        Pattern pattern = dict[i];
+        int pattern_len = pattern.length;
+        int buffer_pos = 0;
+        buffer_pos += sprintf(&buffer[buffer_pos], "P%d = ", pattern.pattern_number);
+        for (int j = 0; j < pattern_len; j++)
+        {
+            buffer_pos += sprintf(&buffer[buffer_pos], "%d ", pattern.pattern[j]);
+        }
+        buffer[buffer_pos++] = '\0';
+        printf("%s\n", buffer);
+    }
+}
+
 void add_pattern(int *aux, int aux_len)
 {
-    printf("esteio");
-    memcpy(dict[dict_size].pattern, *aux, aux_len);
+    memcpy(dict[dict_size].pattern, aux, aux_len * sizeof(int));
     dict[dict_size].length = aux_len;
+    dict[dict_size].pattern_number = dict_size;
     dict_size++;
-    printf("%d %d",*aux, dict_size);
 }
 
 void compress(FILE *in_file, FILE *out_file)
@@ -66,27 +82,22 @@ void compress(FILE *in_file, FILE *out_file)
     int aux[MAX_PATTERN_SIZE];
     prefix[0] = fgetc(in_file);
     int prefix_len = 1;
-    printf(" Print1 %d \n", prefix[0]);
     int offset;
     while (prefix[0] != EOF)
-    {   
-        
-        offset = 0;
+    {
         suffix[0] = fgetc(in_file);
-        //after_suffix[0]=fgetc(in_file);
-        //offset--; 
-        printf(" Pj %d \n", prefix[0]);
-        
-        printf(" Pk %d \n", suffix[0]);
-        printf("esteio11");
+        offset = 0;
+        if (suffix[0] == EOF)
+        {
+            break;
+        }
+        // after_suffix[0]=fgetc(in_file);
+        // offset--;
         memcpy(aux, prefix, prefix_len * sizeof(int));
-
-        printf("esteio1131243124");
         memcpy(aux + prefix_len, suffix, sizeof(int));
-        printf("esteio1");
-        int aux_len = prefix_len + 1; //incrementar conforme find_pattern
-        prefix[0]=suffix[0]; 
-        add_pattern(*aux, aux_len);
+        int aux_len = prefix_len + 1; // incrementar conforme find_pattern
+        prefix[0] = suffix[0];
+        add_pattern(aux, aux_len);
         print_dict();
         // for (int i=0; i < 5; i++){ //checkar se o padrao aux existe no dict
         //     if(find_pattern(*aux)==-1)
@@ -95,20 +106,13 @@ void compress(FILE *in_file, FILE *out_file)
         //         break;
         //     } //se encontrar icrementa ate nao conhecer
         //     after_suffix[0]=fgetc(in_file);
-        //     offset--; 
-
+        //     offset--;
         // }
 
-        //seek(in_file, offset, SEEK_CUR); //offset tem de ser dinamico, POR CADA FGETC NO AFTER_SUFFIX DEC O OFFSET
-        // for (int i = 0; i < aux_len ; i++) {
-        //     printf("Aux: %d \n", aux[i]);
-        // }
-
-        
-
-        
-        
-        
+        // seek(in_file, offset, SEEK_CUR); //offset tem de ser dinamico, POR CADA FGETC NO AFTER_SUFFIX DEC O OFFSET
+        //  for (int i = 0; i < aux_len ; i++) {
+        //      printf("Aux: %d \n", aux[i]);
+        //  }
 
         // char suffix = fgetc(in_file);
         // if (suffix == EOF)
@@ -145,30 +149,8 @@ void compress(FILE *in_file, FILE *out_file)
         //     prefix[0] = fgetc(in_file);
         //     prefix_len = 1;
         // }
-        
     }
 }
-
-void print_dict()
-{
-    char buffer[1024];
-    for (int i = 256; i < dict_size; i++)
-    {
-        Pattern pattern = dict[i];
-        int pattern_len = pattern.length;
-        int buffer_pos = 0;
-        for (int j = 0; j < pattern_len; j++) {
-            buffer_pos += sprintf(&buffer[buffer_pos], "%d", pattern.pattern[j]);
-        }
-        buffer[buffer_pos++] = '[';
-        buffer_pos += sprintf(&buffer[buffer_pos], "P%d", pattern.pattern_number);
-        buffer[buffer_pos++] = ']';
-        buffer[buffer_pos++] = '\0';
-        printf("%s ", buffer);
-    }
-    printf("\n");
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -204,7 +186,7 @@ int main(int argc, char *argv[])
     long compressed_size = ftell(compressed_file);
     fclose(compressed_file);
     // print_dict();
-    printf("Compression rate: %.2f%%\n", (float)compressed_size / orig_size * 100);
+    // printf("Compression rate: %.2f%%\n", (float)compressed_size / orig_size * 100);
 
     return 0;
 }
