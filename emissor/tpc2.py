@@ -3,9 +3,9 @@ from turtle import delay
 import numpy
 import random
 
-ficheiro = "logo.txt"
-destinoWith = "Primeiro.png"
-destinoWithout = "Segundo.png"
+ficheiro = "t.txt"
+destinoWith = "Primeiro.txt"
+destinoWithout = "Segundo.txt"
 
 maximum = 100
 limit = 0  # (0 - maximum) Bit Error Rate
@@ -30,8 +30,6 @@ def geradorBinario():
     global nBits
 
     global nBytes
-
-    ficheiro = "logo.png"
 
     Bytes = numpy.fromfile(ficheiro, dtype="uint8")
 
@@ -186,7 +184,7 @@ corrector()
 bits = geradorBinario()
 bits = bits.tolist()
 n = 4
-output = [bits[i : i + n] for i in range(0, len(bits), n)]
+output = [bits[i: i + n] for i in range(0, len(bits), n)]
 bitsWith = []
 bitsWithout = []
 
