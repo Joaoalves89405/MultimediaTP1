@@ -47,6 +47,31 @@ void init_dict()
     return -1;
 } */
 
+int patternExists(const int *pattern, int length)
+{
+    for (int i = 255; i < dict_size; i++)
+    {
+        Pattern currentPattern = dict[i];
+        if (currentPattern.length == length)
+        {
+            int match = 1;
+            for (int j = 0; j < length; j++)
+            {
+                if (currentPattern.pattern[j] != pattern[j])
+                {
+                    match = 0;
+                    break;
+                }
+            }
+            if (match)
+            {
+                return 1; // Pattern exists in the dictionary
+            }
+        }
+    }
+    return 0; // Pattern does not exist in the dictionary
+}
+
 void print_dict()
 {
     char buffer[1024];
@@ -97,6 +122,8 @@ void compress(FILE *in_file, FILE *out_file)
         memcpy(aux + prefix_len, suffix, sizeof(int));
         int aux_len = prefix_len + 1; // incrementar conforme find_pattern
         prefix[0] = suffix[0];
+        // int pattern = patternExists(aux, aux_len);
+        // printf("Pattern: %d \n", pattern);
         add_pattern(aux, aux_len);
         print_dict();
 
