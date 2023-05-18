@@ -36,8 +36,7 @@ int lzwd(unsigned char *in, unsigned char *out, int size_in){
 
 	int value = FIRST_VALUE;
 
-	while(inindex < size_in){
-	     
+	while(inindex < size_in){	     
 	     if(pj.empty()){
 	    	pj = in[inindex];
 		  	inindex++;
