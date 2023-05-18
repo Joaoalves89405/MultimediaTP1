@@ -26,26 +26,26 @@ void init_dict()
     }
 }
 
-// int find_pattern(int *prefix, int prefix_len, char suffix)
-// {
-//     for (int i = 0; i < dict_size; i++)
-//     {
-//         if (dict[i].length != prefix_len + 1)
-//         {
-//             continue;
-//         }
-//         if (memcmp(dict[i].prefix, prefix, prefix_len * sizeof(int)) != 0)
-//         {
-//             continue;
-//         }
-//         if (dict[i].suffix[prefix_len] != suffix)
-//         {
-//             continue;
-//         }
-//         return i;
-//     }
-//     return -1;
-// }
+/* int find_pattern(int *prefix, int prefix_len, char suffix)
+{
+    for (int i = 0; i < dict_size; i++)
+    {
+        if (dict[i].length != prefix_len + 1)
+        {
+            continue;
+        }
+        if (memcmp(dict[i].prefix, prefix, prefix_len * sizeof(int)) != 0)
+        {
+            continue;
+        }
+        if (dict[i].suffix[prefix_len] != suffix)
+        {
+            continue;
+        }
+        return i;
+    }
+    return -1;
+} */
 
 void print_dict()
 {
@@ -99,9 +99,10 @@ void compress(FILE *in_file, FILE *out_file)
         prefix[0] = suffix[0];
         add_pattern(aux, aux_len);
         print_dict();
+
         // for (int i=0; i < 5; i++){ //checkar se o padrao aux existe no dict
         //     if(find_pattern(*aux)==-1)
-        //         add_pattern(*aux, aux_len);
+        //          add_pattern(aux, aux_len);
         //         //adiciona novo pattern
         //         break;
         //     } //se encontrar icrementa ate nao conhecer
